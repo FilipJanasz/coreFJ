@@ -732,7 +732,13 @@ class ChatLog:
         if llm_api:
             prompt_parts.append(llm_api.api_prompt)
 
-        # Append current date and time to the prompt if the corresponding tool is not provided
+        if extra_system_prompt := (
+            # Take new system prompt if one was given
+            user_extra_system_prompt or self.extra_system_prompt
+        ):
+            prompt_parts.append(extra_system_prompt)
+
+        # Append current date and time as the last part to maximize cacheable prefix
         llm_tools: list[llm.Tool] = llm_api.tools if llm_api else []
         if not any(tool.name.endswith("GetDateTime") for tool in llm_tools):
             prompt_parts.append(
@@ -743,12 +749,6 @@ class ChatLog:
                     user_name,
                 )
             )
-
-        if extra_system_prompt := (
-            # Take new system prompt if one was given
-            user_extra_system_prompt or self.extra_system_prompt
-        ):
-            prompt_parts.append(extra_system_prompt)
 
         prompt = "\n".join(prompt_parts)
 
